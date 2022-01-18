@@ -50,7 +50,9 @@ Event Processors along with some initial implementations of both.
 
 Communication between the `Event Sink` and the backend `Event Processors` is done
 over a bi-directional gRPC stream. The `Event Sink` uses a API defined enum for
-its basis of mapping events to their respective `Event Processors`.
+its basis of mapping events to their respective `Event Processors`. By specifying
+an event type enum, supporting new event types and their respective processors
+becomes trivial since all a sink needs is to map event type(s) to processor(s).
 
 `eventproc/main.go` exposes an Event Sink through a REST-style HTTP API.
 
