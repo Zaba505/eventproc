@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package event;
+
+import "empty.proto";
+
+option go_package = "github.com/Zaba505/eventproc/action";
+
+// the content of an Event could be anything.
+message Action {
+  enum Type {
+    HELLO = 0;
+  }
+
+  // type is used by the Gateway service for routing Actions to their
+  // corresponding Processor.
+  Type type = 1;
+
+  // payload can be formatted however the client and processor want.
+  bytes payload = 2;
+}
+
+// Gateway is the gRPC service a client calls
+service Gateway {
+  rpc ProcessAction (ActionRequest) returns (ActionResponse);
+}
+
+message ActionRequest {
+  Action action = 1;
+}
+
+message ActionResponse {
+  oneof body {
+    // optional response content
+    bytes content = 1;
+
+    // tell client that the action was processed and no response content will be returned.
+    google.protobuf.Empty was_processed = 2;
+  }
+}
+
+// Processor represent a gRPC service which can process Actions.
+service Processor {
+  rpc ProcessActions (stream ProcessorRequest) returns (stream ProcessorResponse);
+}
+
+message ProcessorRequest {
+  // id is used by EventSink to map responses to requests
+  string id = 1;
+
+  // action payload received from Gateway which needs to be processed
+  Action action = 2;
+}
+
+message ProcessorResponse {
+  // id is used by Gateway to map responses to requests
+  string id = 1;
+
+  // instead of sending an ActionResponse a new oneof is creating
+  // allowing for future Gateway <-> Processor changes to be made to
+  // message without also leaking into the Client <-> Gateway.
+  oneof body {
+    // optional response content
+    bytes content = 2;
+
+    // tell client that the action was processed and no response content will be returned.
+    google.protobuf.Empty was_processed = 3;
+  }
+}

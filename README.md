@@ -1,7 +1,7 @@
 # eventproc
 
-A proof-of-concept for exploring event based architecture utilizing bi-directional
-gRPC streams.
+A proof-of-concept for implementing a RPC style gateway for processing
+actions leveraging bi-directional gRPC streams.
 
 ## Architecture
 
@@ -15,11 +15,11 @@ gRPC streams.
                       |   |
                       |   |
                       |   |
-+---------+         +-+---v--+         +-------------+
-|         +-------->|        +-------->|             |
-| Client  |         | Sink   |         | Processor 2 |
-|         |<--------+        |<--------+             |
-+---------+         +--^---+-+         +-------------+
++---------+         +-+---v---+         +-------------+
+|         +-------->|         +-------->|             |
+| Client  |         | Gateway |         | Processor 2 |
+|         |<--------+         |<--------+             |
++---------+         +--^---+--+         +-------------+
                        |   |
                        |   |
                        |   |
@@ -36,28 +36,32 @@ gRPC streams.
 **Client:** a gRPC client (mobile device) or a web
 based HTTP client (a browser).
 
-**Event Sink:** implements an API for
-clients to simply send an Event and then receive a response. The response
-could be nothing or it could be an event from one of the backend Event Processors.
-This allows for both request/response style events as well as PubSub style events.
+**Gateway:** implements an API for clients to simply send a request to and then
+receive a response. The response could be nothing or it could contain content
+from one of the backend Processors, which the Gateway would relay to the
+corresponding client. This provides a uniform for both clients as well as
+processors.
 
-**Event Processor:** a gRPC service which events are streamed to and from.
+**Processor:** a gRPC service which actions and there responses are streamed
+to and from.
 
 ## Implementation
 
-Located in the `event` folder are gRPC service definitions for an Event Sink and
-Event Processors along with some initial implementations of both.
+Located in the `action` folder are gRPC service definitions for a Gateway and
+Processor along with a rough implementation of a Gateway.
 
-Communication between the `Event Sink` and the backend `Event Processors` is done
-over a bi-directional gRPC stream. The `Event Sink` uses a API defined enum for
-its basis of mapping events to their respective `Event Processors`. By specifying
-an event type enum, supporting new event types and their respective processors
-becomes trivial since all a sink needs is to map event type(s) to processor(s).
+Communication between the `Gateway` and the backend `Processors` is done
+over a bi-directional gRPC stream. The `Gateway` uses a API defined enum for
+its basis of mapping events to their respective `Processors`. By specifying
+an action type enum, supporting new action types and their respective processors
+becomes trivial since all a gateway needs is to map action type(s) to processor(s).
 
-`eventproc/main.go` exposes an Event Sink through a REST-style HTTP API.
+`gateway/main.go` runs a Gateway service exposing it through a HTTP REST-ish API
+and a gRPC API.
 
-`proc/main.go` implements a very simple gRPC based Event Processor "backend" that
-simply echoes back any events streamed to it.
+`echo/main.go` runs a Processor "backend" that simply echoes back any action
+content streamed to it. It only exposes the streaming gRPC API, per the Processor
+service definition.
 
 ## Research resources
 
